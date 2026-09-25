@@ -68,6 +68,7 @@
         status_code: 200
       register: keycloak_groups
       changed_when: false
+      no_log: true
 
 #проверяем, что все запрошенные группы существуют
     - name: Validate requested groups
@@ -92,6 +93,7 @@
       register: existing_users
       changed_when: false
       loop: "{{ users_to_process }}"
+      no_log: true
 
 #создаём отсутствующих пользователей
     - name: Create missing users
@@ -130,6 +132,7 @@
       register: keycloak_users
       changed_when: false
       loop: "{{ users_to_process }}"
+      no_log: true
 
 #получаем текущие группы каждого пользователя
     - name: Get current user groups
@@ -143,6 +146,7 @@
       register: current_user_groups
       changed_when: false
       loop: "{{ keycloak_users.results }}"
+      no_log: true
 
 #добавляем пользователей в группы
     - name: Add users to groups
