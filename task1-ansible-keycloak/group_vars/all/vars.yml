@@ -1,0 +1,3 @@
+keycloak_url: "http://localhost:8080"
+keycloak_realm: "devops"
+keycloak_admin_realm: "master"
