@@ -23,11 +23,12 @@ Bash-скрипт для создания локального ежедневн�
 Параметры подключения и пути задаются через переменные окружения из файла `.backup.env`:
 
 ```bash
-export PGHOST=localhost
-export PGDATABASE=backup_db
-export PGUSER=backup_user
-export BACKUP_DIR=/opt/postgres-backup
-export LOG_DIR=/opt/postgres-backup/backup_logs
+export PGHOST=your_host
+export PGDATABASE=your_database
+export PGUSER=your_user
+export BACKUP_DIR=your_backup_directory
+export LOG_DIR=your_log_directory
+export PGPASSWORD=your_password
 ```
 
 

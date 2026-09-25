@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ENV_FILE="/opt/postgres-backup/.backup.env"
+ENV_FILE=".backup.env"
 
 if [[ "${1:-}" == "--help" ]]; then
     echo "Usage: $0 [--help] [--install-cron]"
