@@ -1,3 +1,4 @@
 .backup.env
 daily/
 monthly/
+backup_logs/

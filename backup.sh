@@ -54,9 +54,13 @@ LOG_FILE="$LOG_DIR/backup_$(date '+%Y-%m-%d').log"
 
 exec >> "$LOG_FILE" 2>&1
 
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
 BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d').sql"
 
-echo "Starting backup of database: $PGDATABASE"
+log "Starting backup of database: $PGDATABASE"
 
 if ! pg_dump -f "$BACKUP_FILE"; then
     echo "ERROR: backup failed"
@@ -64,7 +68,7 @@ if ! pg_dump -f "$BACKUP_FILE"; then
     exit 1
 fi
 
-echo "Backup completed: $BACKUP_FILE"
+log "Backup completed: $BACKUP_FILE"
 
 # Keep 7 latest daily backups
 count=0
@@ -76,6 +80,8 @@ for backup in $(ls -1t "$BACKUP_DIR/daily/"*.sql 2>/dev/null); do
         rm -f "$backup"
     fi
 done
+
+log "Daily rotation completed"
 
 # If today is the last Sunday of the month,
 # copy the daily backup to monthly
@@ -90,3 +96,4 @@ if [[ "$DAY_OF_WEEK" -eq 7 ]]; then
         echo "Monthly backup created: $BACKUP_DIR/monthly/$(basename "$BACKUP_FILE")"
     fi
 fi
+log "Backup finished successfully"
