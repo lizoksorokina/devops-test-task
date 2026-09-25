@@ -37,6 +37,7 @@
           - item.fio is defined
           - item.user_groups is defined
         fail_msg: "Each user must contain email, fio and user_groups."
+        quiet: true
       loop: "{{ users_to_process }}"
 
 #получаем токен администратора
@@ -78,6 +79,7 @@
         fail_msg: >-
           Keycloak group '{{ item.1 }}' does not exist
           in realm '{{ keycloak_realm }}'.
+        quiet: true
       loop: "{{ users_to_process | subelements('user_groups') }}"
 
 #gроверяем существование пользователей
@@ -132,7 +134,7 @@
       register: keycloak_users
       changed_when: false
       loop: "{{ users_to_process }}"
-      no_log: true
+#      no_log: true
 
 #получаем текущие группы каждого пользователя
     - name: Get current user groups
