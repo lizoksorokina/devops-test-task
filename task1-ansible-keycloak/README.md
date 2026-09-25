@@ -47,9 +47,9 @@ keycloak_admin_username: "your_keycloak_admin_username"
 ```
 
 Секретные значения хранятся в `group_vars/all/vault.yml`, зашифрованном с помощью Ansible Vault.
-- `keycloak_admin_password` — пароль администратора Keycloak;
-- `keycloak_temporary_password` — временный пароль, устанавливаемый новым пользователям.
-
+- `keycloak_admin_password` — пароль администратора Keycloak
+- `keycloak_temporary_password` — временный пароль, устанавливаемый новым пользователям
+- `keycloak_admin_username` - пароль администартора Keycloak
 ## Режим 1 — один пользователь
 
 Данные пользователя передаются через `--extra-vars`.
