@@ -13,7 +13,7 @@ if [[ "${1:-}" == "--help" ]]; then
     echo "  PGDATABASE   PostgreSQL database name"
     echo "  PGUSER       PostgreSQL user"
     echo "  BACKUP_DIR   Directory for backups"
-    echo
+    echo "  LOG_DIR      Directory for backup logs"
     echo "Options:"
     echo "  --help          Show this help"
     echo "  --install-cron Install daily cron job"
@@ -39,9 +39,20 @@ if [[ -z "${BACKUP_DIR:-}" ]]; then
     echo "ERROR: BACKUP_DIR is not set"
     exit 1
 fi
+if [[ -z "${LOG_DIR:-}" ]]; then
+    echo "ERROR: LOG_DIR is not set"
+    exit 1
+fi
+
 
 mkdir -p "$BACKUP_DIR/daily"
 mkdir -p "$BACKUP_DIR/monthly"
+mkdir -p "$LOG_DIR"
+
+
+LOG_FILE="$LOG_DIR/backup_$(date '+%Y-%m-%d').log"
+
+exec >> "$LOG_FILE" 2>&1
 
 BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d').sql"
 
