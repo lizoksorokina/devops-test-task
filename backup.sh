@@ -1,4 +1,11 @@
+```bash
 #!/usr/bin/env bash
+
+ENV_FILE="/opt/postgres-backup/.backup.env"
+
+if [[ -f "$ENV_FILE" ]]; then
+    source "$ENV_FILE"
+fi
 
 if [[ -z "${PGHOST:-}" ]]; then
     echo "ERROR: PGHOST is not set"
@@ -15,9 +22,10 @@ if [[ -z "${BACKUP_DIR:-}" ]]; then
     exit 1
 fi
 
-mkdir -p "$BACKUP_DIR"
+mkdir -p "$BACKUP_DIR/daily"
+mkdir -p "$BACKUP_DIR/monthly"
 
-BACKUP_FILE="$BACKUP_DIR/backup_$(date '+%Y-%m-%d_%H-%M-%S').sql"
+BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d_%H-%M-%S').sql"
 
 echo "Starting backup of database: $PGDATABASE"
 
@@ -28,3 +36,29 @@ if ! pg_dump -f "$BACKUP_FILE"; then
 fi
 
 echo "Backup completed: $BACKUP_FILE"
+
+# Keep 7 latest daily backups
+count=0
+
+for backup in $(ls -1t "$BACKUP_DIR/daily/"*.sql 2>/dev/null); do
+    count=$((count + 1))
+
+    if [[ "$count" -gt 7 ]]; then
+        rm -f "$backup"
+    fi
+done
+
+# If today is the last Sunday of the month,
+# copy the daily backup to monthly
+DAY_OF_WEEK=$(date '+%u')
+
+if [[ "$DAY_OF_WEEK" -eq 7 ]]; then
+    CURRENT_MONTH=$(date '+%Y-%m')
+    NEXT_SUNDAY_MONTH=$(date -d '+7 days' '+%Y-%m')
+
+    if [[ "$CURRENT_MONTH" != "$NEXT_SUNDAY_MONTH" ]]; then
+        cp "$BACKUP_FILE" "$BACKUP_DIR/monthly/"
+        echo "Monthly backup created: $BACKUP_DIR/monthly/$(basename "$BACKUP_FILE")"
+    fi
+fi
+```
