@@ -97,3 +97,18 @@ if [[ "$DAY_OF_WEEK" -eq 7 ]]; then
     fi
 fi
 log "Backup finished successfully"
+
+#install crontab 
+if [[ "${1:-}" == "--install-cron" ]]; then
+    CRON_ENTRY="0 2 * * * /opt/postgres-backup/backup.sh"
+
+    if crontab -l 2>/dev/null | grep -Fxq "$CRON_ENTRY"; then
+        echo "Cron job already installed"
+        exit 0
+    fi
+
+    (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+
+    echo "Cron job installed"
+    exit 0
+fi
