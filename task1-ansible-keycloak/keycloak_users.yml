@@ -7,9 +7,7 @@
 
   tasks:
 
-    # ---------------------------------------------------------
-    # Подготовка входных данных
-    # ---------------------------------------------------------
+# подготовка входных данных
 
     - name: Load users from YAML
       ansible.builtin.include_vars:
@@ -41,9 +39,7 @@
         fail_msg: "Each user must contain email, fio and user_groups."
       loop: "{{ users_to_process }}"
 
-    # ---------------------------------------------------------
-    # Получаем токен администратора
-    # ---------------------------------------------------------
+#получаем токен администратора
 
     - name: Get Keycloak admin token
       ansible.builtin.uri:
@@ -61,10 +57,7 @@
       changed_when: false
       no_log: true
 
-    # ---------------------------------------------------------
-    # Получаем группы Keycloak
-    # ---------------------------------------------------------
-
+#получаем группы Keycloak
     - name: Get Keycloak groups
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/groups"
@@ -76,10 +69,7 @@
       register: keycloak_groups
       changed_when: false
 
-    # ---------------------------------------------------------
-    # Проверяем, что все запрошенные группы существуют
-    # ---------------------------------------------------------
-
+#проверяем, что все запрошенные группы существуют
     - name: Validate requested groups
       ansible.builtin.assert:
         that:
@@ -89,9 +79,7 @@
           in realm '{{ keycloak_realm }}'.
       loop: "{{ users_to_process | subelements('user_groups') }}"
 
-    # ---------------------------------------------------------
-    # Проверяем существование пользователей
-    # ---------------------------------------------------------
+#gроверяем существование пользователей
 
     - name: Check if users exist
       ansible.builtin.uri:
@@ -105,10 +93,7 @@
       changed_when: false
       loop: "{{ users_to_process }}"
 
-    # ---------------------------------------------------------
-    # Создаём только отсутствующих пользователей
-    # ---------------------------------------------------------
-
+#создаём отсутствующих пользователей
     - name: Create missing users
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users"
@@ -133,10 +118,7 @@
       no_log: true
       loop: "{{ existing_users.results }}"
 
-    # ---------------------------------------------------------
-    # Получаем пользователей после создания
-    # ---------------------------------------------------------
-
+#получаем пользователей после создания для id
     - name: Get users from Keycloak
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
@@ -149,10 +131,7 @@
       changed_when: false
       loop: "{{ users_to_process }}"
 
-    # ---------------------------------------------------------
-    # Получаем текущие группы каждого пользователя
-    # ---------------------------------------------------------
-
+#получаем текущие группы каждого пользователя
     - name: Get current user groups
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{ item.json[0].id }}/groups"
@@ -165,10 +144,7 @@
       changed_when: false
       loop: "{{ keycloak_users.results }}"
 
-    # ---------------------------------------------------------
-    # Добавляем пользователей в группы
-    # ---------------------------------------------------------
-
+#добавляем пользователей в группы
     - name: Add users to groups
       ansible.builtin.uri:
         url: >-
