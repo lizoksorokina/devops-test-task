@@ -64,7 +64,7 @@ $BACKUP_DIR/daily/
 Скрипт устанавливает запуск каждый день в 02:00:
 
 ```text
-0 2 * * * /opt/postgres-backup/backup.sh
+0 2 * * * $BASE_DIR/backup.sh
 ```
 
 Проверить установленное задание:
