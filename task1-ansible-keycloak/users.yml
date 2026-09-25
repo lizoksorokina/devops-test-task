@@ -1,0 +1,12 @@
+
+users:
+  - email: maria.volkova@example.com
+    fio: "Maria Volkova"
+    user_groups:
+      - developers
+      - analysts
+
+  - email: alexey.smirnov@example.com
+    fio: "Alexey Smirnov"
+    user_groups:
+      - developers

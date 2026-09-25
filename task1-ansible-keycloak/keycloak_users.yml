@@ -1,8 +1,49 @@
-- name: Test Keycloak connection
+- name: Create Keycloak users
   hosts: local
   gather_facts: false
 
+  vars:
+    users_file: ""
+
   tasks:
+
+    # ---------------------------------------------------------
+    # Подготовка входных данных
+    # ---------------------------------------------------------
+
+    - name: Load users from YAML
+      ansible.builtin.include_vars:
+        file: "{{ users_file }}"
+      when: users_file | length > 0
+
+    - name: Prepare users list
+      ansible.builtin.set_fact:
+        users_to_process: >-
+          {{
+            users
+            if users_file | length > 0
+            else [
+              {
+                'email': email,
+                'fio': fio,
+                'user_groups': user_groups
+              }
+            ]
+          }}
+
+    - name: Validate input
+      ansible.builtin.assert:
+        that:
+          - users_to_process | length > 0
+          - item.email is defined
+          - item.fio is defined
+          - item.user_groups is defined
+        fail_msg: "Each user must contain email, fio and user_groups."
+      loop: "{{ users_to_process }}"
+
+    # ---------------------------------------------------------
+    # Получаем токен администратора
+    # ---------------------------------------------------------
 
     - name: Get Keycloak admin token
       ansible.builtin.uri:
@@ -20,9 +61,10 @@
       changed_when: false
       no_log: true
 
-    - name: Show token received
-      ansible.builtin.debug:
-        msg: "Keycloak admin token received"
+    # ---------------------------------------------------------
+    # Получаем группы Keycloak
+    # ---------------------------------------------------------
+
     - name: Get Keycloak groups
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/groups"
@@ -33,27 +75,41 @@
         status_code: 200
       register: keycloak_groups
       changed_when: false
+
+    # ---------------------------------------------------------
+    # Проверяем, что все запрошенные группы существуют
+    # ---------------------------------------------------------
+
     - name: Validate requested groups
       ansible.builtin.assert:
         that:
-          - item in (keycloak_groups.json | map(attribute='name') | list)
-        fail_msg: "Keycloak group '{{ item }}' does not exist in realm '{{ keycloak_realm }}'."
-      loop: "{{ user_groups }}"
-    - name: Show Keycloak groups
-      ansible.builtin.debug:
-        msg: "{{ keycloak_groups.json }}"
-    - name: Check if user exists
+          - item.1 in (keycloak_groups.json | map(attribute='name') | list)
+        fail_msg: >-
+          Keycloak group '{{ item.1 }}' does not exist
+          in realm '{{ keycloak_realm }}'.
+      loop: "{{ users_to_process | subelements('user_groups') }}"
+
+    # ---------------------------------------------------------
+    # Проверяем существование пользователей
+    # ---------------------------------------------------------
+
+    - name: Check if users exist
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ email | urlencode }}"
+        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
         method: GET
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
         return_content: true
         status_code: 200
-      register: existing_user
+      register: existing_users
       changed_when: false
+      loop: "{{ users_to_process }}"
 
-    - name: Create Keycloak user
+    # ---------------------------------------------------------
+    # Создаём только отсутствующих пользователей
+    # ---------------------------------------------------------
+
+    - name: Create missing users
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users"
         method: POST
@@ -62,58 +118,44 @@
           Content-Type: "application/json"
         body_format: json
         body:
-          username: "{{ email }}"
-          email: "{{ email }}"
-          firstName: "{{ fio.split()[0] }}"
-          lastName: "{{ fio.split()[-1] }}"
+          username: "{{ item.item.email }}"
+          email: "{{ item.item.email }}"
+          firstName: "{{ item.item.fio.split()[0] }}"
+          lastName: "{{ item.item.fio.split()[-1] }}"
           enabled: true
           credentials:
             - type: password
               value: "{{ keycloak_temporary_password }}"
               temporary: true
         status_code: 201
-      when: existing_user.json | length == 0
+      when: item.json | length == 0
       changed_when: true
       no_log: true
+      loop: "{{ existing_users.results }}"
 
-    - name: Get created user
+    # ---------------------------------------------------------
+    # Получаем пользователей после создания
+    # ---------------------------------------------------------
+
+    - name: Get users from Keycloak
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ email | urlencode }}"
+        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
         method: GET
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
         return_content: true
         status_code: 200
-      register: created_user
+      register: keycloak_users
       changed_when: false
+      loop: "{{ users_to_process }}"
 
-    - name: Show user data
-      ansible.builtin.debug:
-        msg:
-          id: "{{ created_user.json[0].id }}"
-          username: "{{ created_user.json[0].username }}"
-          email: "{{ created_user.json[0].email }}"
-          firstName: "{{ created_user.json[0].firstName }}"
-          lastName: "{{ created_user.json[0].lastName }}"
-    - name: Build requested groups
-      ansible.builtin.set_fact:
-        requested_groups: "{{ requested_groups | default([]) + [ {
-          'name': item,
-          'id': (
-            keycloak_groups.json
-            | selectattr('name', 'equalto', item)
-            | map(attribute='id')
-            | first
-          )
-        } ] }}"
-      loop: "{{ user_groups }}"
+    # ---------------------------------------------------------
+    # Получаем текущие группы каждого пользователя
+    # ---------------------------------------------------------
 
-    - name: Show requested groups
-      ansible.builtin.debug:
-        msg: "{{ requested_groups }}"
-    - name: Get user groups
+    - name: Get current user groups
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{ created_user.json[0].id }}/groups"
+        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{ item.json[0].id }}/groups"
         method: GET
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
@@ -121,17 +163,38 @@
         status_code: 200
       register: current_user_groups
       changed_when: false
+      loop: "{{ keycloak_users.results }}"
 
-    - name: Show user groups
-      ansible.builtin.debug:
-        msg: "{{ current_user_groups.json }}"
-    - name: Add user to missing groups
+    # ---------------------------------------------------------
+    # Добавляем пользователей в группы
+    # ---------------------------------------------------------
+
+    - name: Add users to groups
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{ created_user.json[0].id }}/groups/{{ item.id }}"
+        url: >-
+          {{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{
+          keycloak_users.results[
+            users_to_process.index(item.0)
+          ].json[0].id
+          }}/groups/{{
+          (
+            keycloak_groups.json
+            | selectattr('name', 'equalto', item.1)
+            | map(attribute='id')
+            | first
+          )
+          }}
         method: PUT
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
         status_code: 204
-      loop: "{{ requested_groups }}"
-      when: item.name not in (current_user_groups.json | map(attribute='name') | list)
+      loop: "{{ users_to_process | subelements('user_groups') }}"
+      when: >
+        item.1 not in (
+          current_user_groups.results[
+            users_to_process.index(item.0)
+          ].json
+          | map(attribute='name')
+          | list
+        )
       changed_when: true
