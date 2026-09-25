@@ -24,7 +24,7 @@ fi
 
 #install crontab
 if [[ "${1:-}" == "--install-cron" ]]; then
-    CRON_ENTRY="0 2 * * * /opt/postgres-backup/backup.sh"
+    CRON_ENTRY="0 2 * * * $BASE_DIR/backup.sh"
 
     if crontab -l 2>/dev/null | grep -Fxq "$CRON_ENTRY"; then
         echo "Cron job already installed"
