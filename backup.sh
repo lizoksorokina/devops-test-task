@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 ENV_FILE="/opt/postgres-backup/.backup.env"
@@ -25,7 +24,7 @@ fi
 mkdir -p "$BACKUP_DIR/daily"
 mkdir -p "$BACKUP_DIR/monthly"
 
-BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d_%H-%M-%S').sql"
+BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d').sql"
 
 echo "Starting backup of database: $PGDATABASE"
 
@@ -61,4 +60,3 @@ if [[ "$DAY_OF_WEEK" -eq 7 ]]; then
         echo "Monthly backup created: $BACKUP_DIR/monthly/$(basename "$BACKUP_FILE")"
     fi
 fi
-```
