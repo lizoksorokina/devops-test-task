@@ -2,6 +2,25 @@
 
 ENV_FILE="/opt/postgres-backup/.backup.env"
 
+
+if [[ "${1:-}" == "--help" ]]; then
+    echo "Usage: $0 [--help] [--install-cron]"
+    echo
+    echo "Create PostgreSQL backup and rotate old backups."
+    echo
+    echo "Environment variables:"
+    echo "  PGHOST       PostgreSQL host"
+    echo "  PGDATABASE   PostgreSQL database name"
+    echo "  PGUSER       PostgreSQL user"
+    echo "  BACKUP_DIR   Directory for backups"
+    echo
+    echo "Options:"
+    echo "  --help          Show this help"
+    echo "  --install-cron Install daily cron job"
+    exit 0
+fi
+
+
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 fi
