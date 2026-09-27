@@ -7,8 +7,7 @@
 
   tasks:
 
-# подготовка входных данных
-
+# Prepare input data
     - name: Load users from YAML
       ansible.builtin.include_vars:
         file: "{{ users_file }}"
@@ -40,8 +39,7 @@
         quiet: true
       loop: "{{ users_to_process }}"
 
-#получаем токен администратора
-
+# Get admin token
     - name: Get Keycloak admin token
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/realms/{{ keycloak_admin_realm }}/protocol/openid-connect/token"
@@ -58,7 +56,6 @@
       changed_when: false
       no_log: true
 
-#получаем группы Keycloak
     - name: Get Keycloak groups
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/groups"
@@ -71,7 +68,6 @@
       changed_when: false
       no_log: true
 
-#проверяем, что все запрошенные группы существуют
     - name: Validate requested groups
       ansible.builtin.assert:
         that:
@@ -81,8 +77,6 @@
           in realm '{{ keycloak_realm }}'.
         quiet: true
       loop: "{{ users_to_process | subelements('user_groups') }}"
-
-#gроверяем существование пользователей
 
     - name: Check if users exist
       ansible.builtin.uri:
@@ -97,7 +91,6 @@
       loop: "{{ users_to_process }}"
       no_log: true
 
-#создаём отсутствующих пользователей
     - name: Create missing users
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users"
@@ -122,7 +115,7 @@
       no_log: true
       loop: "{{ existing_users.results }}"
 
-#получаем пользователей после создания для id
+# Get users from Keycloak for id
     - name: Get users from Keycloak
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
@@ -136,7 +129,7 @@
       loop: "{{ users_to_process }}"
 #      no_log: true
 
-#получаем текущие группы каждого пользователя
+
     - name: Get current user groups
       ansible.builtin.uri:
         url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users/{{ item.json[0].id }}/groups"
@@ -150,7 +143,6 @@
       loop: "{{ keycloak_users.results }}"
       no_log: true
 
-#добавляем пользователей в группы
     - name: Add users to groups
       ansible.builtin.uri:
         url: >-
