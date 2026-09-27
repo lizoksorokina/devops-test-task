@@ -22,9 +22,13 @@ if [[ "${1:-}" == "--help" ]]; then
     exit 0
 fi
 
+if [[ -f "$ENV_FILE" ]]; then 
+    source "$ENV_FILE" 
+fi
+
 #install crontab
 if [[ "${1:-}" == "--install-cron" ]]; then
-    CRON_ENTRY="0 2 * * * $BASE_DIR/backup.sh"
+    CRON_ENTRY="0 2 * * * $BACKUP_DIR/backup.sh"
 
     if crontab -l 2>/dev/null | grep -Fxq "$CRON_ENTRY"; then
         echo "Cron job already installed"
@@ -38,9 +42,6 @@ if [[ "${1:-}" == "--install-cron" ]]; then
 fi
 
 
-if [[ -f "$ENV_FILE" ]]; then
-    source "$ENV_FILE"
-fi
 
 if [[ -z "${PGHOST:-}" ]]; then
     echo "ERROR: PGHOST is not set"
