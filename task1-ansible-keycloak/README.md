@@ -43,7 +43,6 @@ task1-ansible-keycloak/
 keycloak_url: "your_keycloak_url"
 keycloak_realm: "your_keycloak_realm"
 keycloak_admin_realm: "your_keycloak_admin_realm:"
-keycloak_admin_username: "your_keycloak_admin_username"
 ```
 
 Секретные значения хранятся в `group_vars/all/vault.yml`, зашифрованном с помощью Ansible Vault.
