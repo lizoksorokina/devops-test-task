@@ -39,7 +39,7 @@ log() {
 
 #install crontab
 if [[ "${1:-}" == "--install-cron" ]]; then
-    CRON_ENTRY="35 14 * * * $SCRIPT_DIR/backup.sh"
+    CRON_ENTRY="0 2 * * * $SCRIPT_DIR/backup.sh"
 
     if crontab -l 2>/dev/null | grep -Fxq "$CRON_ENTRY"; then
         echo "Cron job already installed"
