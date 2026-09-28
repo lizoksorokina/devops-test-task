@@ -80,7 +80,7 @@
 
     - name: Check if users exist
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
+        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}&exact=true"
         method: GET
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
@@ -118,7 +118,7 @@
 # Get users from Keycloak for id
     - name: Get users from Keycloak
       ansible.builtin.uri:
-        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}"
+        url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?email={{ item.email | urlencode }}&exact=true"
         method: GET
         headers:
           Authorization: "Bearer {{ keycloak_token.json.access_token }}"
