@@ -127,7 +127,7 @@
       register: keycloak_users
       changed_when: false
       loop: "{{ users_to_process }}"
-#      no_log: true
+      no_log: true
 
 
     - name: Get current user groups
