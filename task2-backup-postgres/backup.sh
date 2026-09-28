@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-ENV_FILE=".backup.env"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.backup.env"
 
 if [[ "${1:-}" == "--help" ]]; then
     echo "Usage: $0 [--help] [--install-cron]"
@@ -26,9 +27,19 @@ if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE" 
 fi
 
+mkdir -p "$LOG_DIR"
+
+LOG_FILE="$LOG_DIR/backup_$(date '+%Y-%m-%d').log"
+
+exec >> "$LOG_FILE" 2>&1
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
 #install crontab
 if [[ "${1:-}" == "--install-cron" ]]; then
-    CRON_ENTRY="0 2 * * * $BACKUP_DIR/backup.sh"
+    CRON_ENTRY="35 14 * * * $SCRIPT_DIR/backup.sh"
 
     if crontab -l 2>/dev/null | grep -Fxq "$CRON_ENTRY"; then
         echo "Cron job already installed"
@@ -65,16 +76,6 @@ fi
 
 mkdir -p "$BACKUP_DIR/daily"
 mkdir -p "$BACKUP_DIR/monthly"
-mkdir -p "$LOG_DIR"
-
-
-LOG_FILE="$LOG_DIR/backup_$(date '+%Y-%m-%d').log"
-
-exec >> "$LOG_FILE" 2>&1
-
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-}
 
 BACKUP_FILE="$BACKUP_DIR/daily/backup_$(date '+%Y-%m-%d').sql"
 
